@@ -61,8 +61,7 @@ class _MoodJAppState extends State<MoodJApp> {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: [
-          Locale('ar'), // English
-          Locale('en'), // Spanish
+          Locale('ar'), Locale('en'), 
         ],
         debugShowCheckedModeBanner: false,
         initialRoute: InitScreen.routeName,

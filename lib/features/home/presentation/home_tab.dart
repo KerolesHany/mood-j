@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:moodly_j/core/service_locator/get_it.dart';
 import 'package:moodly_j/core/theme/app_theme.dart';
-import 'package:moodly_j/core/get_emoji.dart';
 import 'package:moodly_j/features/moods/presentation/cubit/moods_cubti.dart';
-import 'package:moodly_j/features/moods/presentation/cubit/moods_states.dart';
 import 'package:moodly_j/features/moods/presentation/screens/add_mood_screen.dart';
-import 'package:moodly_j/features/home/widgets/custom_button.dart';
-import 'package:moodly_j/features/home/widgets/custom_item.dart';
-import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_cubit.dart';
-import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_states.dart';
+import 'package:moodly_j/features/home/presentation/widgets/custom_button.dart';
+import 'package:moodly_j/features/home/presentation/widgets/total_entries_item.dart';
+import 'package:moodly_j/features/home/presentation/widgets/most_frequent_mood_item.dart';
+import 'package:moodly_j/features/home/presentation/widgets/writing_streak_item.dart';
+import 'package:moodly_j/features/home/presentation/widgets/today_mood_item.dart';
+import 'package:moodly_j/features/home/presentation/widgets/user_greeting.dart';
 import 'package:moodly_j/l10n/app_localizations.dart';
 
 // ignore: must_be_immutable
@@ -53,22 +52,7 @@ class _HomeTabState extends State<HomeTab> {
               style: textTheme.titleLarge!.copyWith(fontSize: 22.sp),
             ),
             SizedBox(height: 12.h),
-            BlocBuilder<UserCubit, UserStates>(
-              buildWhen: (_, current) =>
-                  current is SuccessGetUserState ||
-                  current is ErrorGetUserState ||
-                  current is LoadingGetUserState,
-              builder: (context, state) {
-                print("user state $state");
-                if (state is SuccessGetUserState) {
-                  return Text(
-                    "${localization.hello}${state.user!.name}",
-                    style: textTheme.titleMedium,
-                  );
-                }
-                return SizedBox();
-              },
-            ),
+            const UserGreeting(),
             SizedBox(height: 12.h),
             ListTile(
               selected: true,
@@ -97,98 +81,11 @@ class _HomeTabState extends State<HomeTab> {
                   crossAxisCount: 2,
                   // childAspectRatio: 1,
                 ),
-                children: [
-                  BlocBuilder<MoodsCubit, MoodsStates>(
-                    buildWhen: (_, current) =>
-                        (current is LoadingGetAllMoodsState ||
-                        current is SuccessGetAllMoodsState ||
-                        current is ErrorGetAllMoodsState),
-                    builder: (context, state) {
-                      if (state is LoadingGetAllMoodsState) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (state is SuccessGetAllMoodsState) {
-                        return CustomItem(
-                          icon: "assets/icons/book.png",
-                          bgColor: AppTheme.lavender,
-                          color: AppTheme.deepPurple,
-                          result: "${state.allMoods.length}",
-                          title: localization.totalEntries,
-                        );
-                      } else if (state is ErrorGetAllMoodsState) {
-                        return const Center(child: Text("Error"));
-                      }
-                      return const Text("noo");
-                    },
-                  ),
-
-                  BlocBuilder<MoodsCubit, MoodsStates>(
-                    buildWhen: (_, current) =>
-                        (current is MostFrequentMoodLoading ||
-                        current is MostFrequentMoodLoaded ||
-                        current is MostFrequentMoodError),
-                    builder: (context, state) {
-                      if (state is MostFrequentMoodLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (state is MostFrequentMoodLoaded) {
-                        return CustomItem(
-                          fixedIcon: false,
-                          emoji: getEmoji(state.mood?.emoji, context).$1,
-                          bgColor: AppTheme.creamYellow,
-                          color: AppTheme.darkBrown,
-                          result: getEmoji(state.mood?.emoji, context).$2,
-                          title: localization.mostFrequent,
-                        );
-                      } else if (state is MostFrequentMoodError) {
-                        return Center(child: const Text("???"));
-                      }
-                      return const SizedBox();
-                    },
-                  ),
-                  BlocBuilder<MoodsCubit, MoodsStates>(
-                    buildWhen: (_, current) =>
-                        (current is WritingStreakLoading ||
-                        current is WritingStreakLoaded ||
-                        current is WritingStreakError),
-                    builder: (context, state) {
-                      if (state is WritingStreakLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (state is WritingStreakLoaded) {
-                        return CustomItem(
-                          icon: "assets/icons/fire.png",
-                          bgColor: AppTheme.lightPink,
-                          color: AppTheme.deepRose,
-                          result: "${state.streak} ${localization.days}",
-                          title: localization.writingStreak,
-                        );
-                      } else if (state is WritingStreakError) {
-                        return const Text("Error");
-                      }
-                      return const SizedBox();
-                    },
-                  ),
-                  BlocBuilder<MoodsCubit, MoodsStates>(
-                    buildWhen: (_, current) =>
-                        current is MoodTodayLoading ||
-                        current is MoodTodayLoaded ||
-                        current is MoodTodayError,
-                    builder: (contexts, statee) {
-                      if (statee is MoodTodayLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (statee is MoodTodayLoaded) {
-                        return CustomItem(
-                          fixedIcon: false,
-                          emoji: getEmoji(statee.mood?.emoji, context).$1,
-                          bgColor: AppTheme.mintGreen,
-                          color: AppTheme.forestGreen,
-                          result: getEmoji(statee.mood?.emoji, context).$2,
-                          title: localization.todayMood,
-                        );
-                      } else if (statee is MoodTodayError) {
-                        return const Text("Error");
-                      }
-                      return const SizedBox();
-                    },
-                  ),
+                children: const [
+                  TotalEntriesItem(),
+                  MostFrequentMoodItem(),
+                  WritingStreakItem(),
+                  TodayMoodItem(),
                 ],
               ),
             ),

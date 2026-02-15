@@ -7,7 +7,6 @@ import 'package:moodly_j/features/home/presentation/home_screen.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_cubit.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_states.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/screens/on_boarding_screen.dart';
-import 'package:moodly_j/l10n/app_localizations.dart';
 
 class InitScreen extends StatefulWidget {
   const InitScreen({super.key});
@@ -56,10 +55,7 @@ class _InitScreenState extends State<InitScreen> {
     final result = await LocalNotifications.requestPermission();
     if (result) {
       await LocalNotifications.init();
-      await LocalNotifications.showScheduledNotification(
-        title: AppLocalizations.of(context)!.reminder,
-        description: AppLocalizations.of(context)!.dontForgetToWriteToday,
-      );
+      // await LocalNotifications.s;
     } else {
       await LocalNotifications.cancel();
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -12,14 +13,14 @@ class LocalNotifications {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestNotificationsPermission();
-    if (request == null) return false;
+    if (request == null) return true;
     return request;
   }
 
   //! => Initialization
   static Future<void> init() async {
     InitializationSettings initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings("@mipmap/ic_launcher"),
+      android: AndroidInitializationSettings("@mipmap/launcher_icon"),
       iOS: DarwinInitializationSettings(),
     );
 
@@ -49,19 +50,25 @@ class LocalNotifications {
   );
 
   //! Scheduled Notification
-  static Future<void> showScheduledNotification({
+  static Future<void> scheduleDailyNotification({
+    required TimeOfDay time,
     required String title,
     required String description,
   }) async {
     await init();
-    final scheduledDate = tz.TZDateTime(
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
       tz.local,
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-      20,
-      0,
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
     );
+
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
 
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       1,
@@ -69,7 +76,7 @@ class LocalNotifications {
       description,
       scheduledDate,
       notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, // مهم
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
