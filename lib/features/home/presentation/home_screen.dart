@@ -7,7 +7,8 @@ import 'package:moodly_j/features/moods/presentation/cubit/moods_cubti.dart';
 import 'package:moodly_j/features/moods/presentation/widgets/journalist_tab.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_cubit.dart';
 import 'package:moodly_j/features/settings/settings_tab.dart';
-import 'package:moodly_j/l10n/app_localizations.dart';
+
+import 'package:moodly_j/features/home/presentation/widgets/home_navigation_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "HomeScreen";
@@ -37,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localization = AppLocalizations.of(context)!;
 
     return SafeArea(
       child: Scaffold(
@@ -50,38 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             color: AppTheme.blue,
           ),
-          child: BottomNavigationBar(
-            elevation: 0,
-            unselectedItemColor: AppTheme.white,
-            selectedItemColor: AppTheme.darkBrown,
-            selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-            type: BottomNavigationBarType.fixed,
-            currentIndex: selectedIndex,
-            onTap: (value) async {
-              selectedIndex = value;
-              final moodsCubit = getIt<MoodsCubit>();
-              if (value == 0) {
-                await moodsCubit.getMoodToday();
-                await moodsCubit.getAllMoods();
-                await moodsCubit.getMostFrequentMood();
-                await moodsCubit.getWritingStreak();
-              }
-              setState(() {});
+          child: HomeNavigationBar(
+            selectedIndex: selectedIndex,
+            onIndexChanged: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
             },
-            items: [
-              BottomNavigationBarItem(
-                label: localization.home,
-                icon: Icon(Icons.home),
-              ),
-              BottomNavigationBarItem(
-                label: localization.myJournal,
-                icon: Icon(Icons.menu_book_rounded),
-              ),
-              BottomNavigationBarItem(
-                label: localization.profile,
-                icon: Icon(Icons.person),
-              ),
-            ],
           ),
         ),
       ),

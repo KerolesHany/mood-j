@@ -5,21 +5,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:moodly_j/core/our_emojis.dart';
-import 'package:moodly_j/core/service_locator/get_it.dart';
-import 'package:moodly_j/core/theme/app_theme.dart';
 import 'package:moodly_j/core/ui/ui_uitils.dart';
 import 'package:moodly_j/features/home/presentation/home_screen.dart';
 import 'package:moodly_j/features/moods/domain/entities/mood_entity.dart';
 import 'package:moodly_j/features/moods/presentation/cubit/moods_cubti.dart';
-import 'package:moodly_j/features/moods/presentation/cubit/moods_states.dart';
 import 'package:moodly_j/features/moods/presentation/widgets/custom_audio_player.dart';
-import 'package:moodly_j/features/moods/presentation/widgets/custom_mood.dart';
-import 'package:moodly_j/features/moods/presentation/widgets/elvated_button.dart';
 import 'package:moodly_j/features/moods/presentation/widgets/feature_lable.dart';
 import 'package:moodly_j/features/moods/presentation/widgets/feeling_input_field.dart';
-import 'package:moodly_j/features/moods/presentation/widgets/pro_item.dart';
 import 'package:moodly_j/features/moods/presentation/widgets/voice_recorder.dart';
 import 'package:moodly_j/l10n/app_localizations.dart';
+
+import 'package:moodly_j/features/moods/presentation/widgets/mood_emoji_selector.dart';
+import 'package:moodly_j/features/moods/presentation/widgets/mood_attachment_section.dart';
+import 'package:moodly_j/features/moods/presentation/widgets/save_mood_button.dart';
 
 class AddMoodScreen extends StatefulWidget {
   static const String routeName = "AddMoodScreen";
@@ -46,8 +44,8 @@ class _AddMoodScreenState extends State<AddMoodScreen> {
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
-
     final textTheme = Theme.of(context).textTheme;
+
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -61,100 +59,31 @@ class _AddMoodScreenState extends State<AddMoodScreen> {
               SizedBox(height: 10.h),
               FeatureLable(lable: localization.howsYourMood),
               //! Emojiis
-              SizedBox(
-                height: 45.h,
-                // color: Colors.amber,
-                child: ListView.builder(
-                  // itemExtent: 60.r,
-                  // padding: EdgeInsets.all(8),
-                  scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) => Container(
-                    margin: EdgeInsets.all(1.r),
-                    child: CustomMood(
-                      backgroundColor: selectedEmoji == emojis[index].name
-                          ? AppTheme.blue
-                          : null,
-                      onPressed: () {
-                        selectedEmoji = emojis[index].name;
-                        setState(() {});
-                      },
-                      emoji: emojis[index].toString(),
-                    ),
-                  ),
-                  itemCount: emojis.length,
-                ),
+              MoodEmojiSelector(
+                emojis: emojis,
+                selectedEmoji: selectedEmoji,
+                onEmojiSelected: (emoji) {
+                  setState(() {
+                    selectedEmoji = emoji;
+                  });
+                },
               ),
               SizedBox(height: 20.h),
               FeatureLable(lable: localization.attachments),
               SizedBox(height: 8.h),
-              //! Add Photo
-              GestureDetector(
-                onTap: pickImage,
-                child: ProItem(
-                  done: selectedImg != null,
-                  icon: Icons.add_photo_alternate,
-                  title: "Add Photo",
-                ),
+              //! Add Photo & Voice
+              MoodAttachmentSection(
+                selectedImg: selectedImg,
+                recorededFile: recorededFile,
+                onPickImage: pickImage,
+                onRecordVoice: recordVoice,
+                onShowRecordedVoice: () {
+                  showRecordedVoice(context);
+                },
               ),
-
-              SizedBox(height: 12.h),
-              GestureDetector(
-                onTap: recordVoice,
-                child: ProItem(
-                  done: recorededFile != null,
-                  icon: Icons.mic,
-                  title: localization.recordVoice,
-                ),
-              ),
-              recorededFile != null
-                  ? Row(
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            showRecordedVoice(context);
-                          },
-                          child: Text(
-                            localization.listenYourRecords,
-                            style: textTheme.titleMedium!.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18.sp,
-                              color: AppTheme.forestGreen,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : SizedBox(),
               SizedBox(height: 6.h),
               Spacer(),
-              BlocListener<MoodsCubit, MoodsStates>(
-                listener: (context, state) {
-                  if (state is LoadingAddMoodState) {
-                    UiUtils.showLoadingIndicator(context);
-                  } else if (state is ErrorAddMoodState) {
-                    UiUtils.hideLoading(context);
-                    UiUtils.showMessage(context, state.message, false);
-                  } else if (state is SuccessAddMoodState) {
-                    UiUtils.hideLoading(context);
-                    UiUtils.showMessage(
-                      context,
-                      localization.yourMoodAdded,
-                      true,
-                    );
-                    Navigator.of(
-                      context,
-                    ).pushReplacementNamed(HomeScreen.routeName);
-                    getIt<MoodsCubit>().getMoodToday();
-                    getIt<MoodsCubit>().getAllMoods();
-                    getIt<MoodsCubit>().getMostFrequentMood();
-                    getIt<MoodsCubit>().getWritingStreak();
-                  }
-                },
-                child: ElvatedButton(
-                  onPressed: addMood,
-                  title: localization.save,
-                ),
-              ),
+              SaveMoodButton(onPressed: addMood),
               SizedBox(height: 10.h),
             ],
           ),
@@ -164,7 +93,7 @@ class _AddMoodScreenState extends State<AddMoodScreen> {
             onTap: () => Navigator.of(
               context,
             ).pushReplacementNamed(HomeScreen.routeName),
-            child: Icon(Icons.arrow_back),
+            child: const Icon(Icons.arrow_back),
           ),
           title: Text(
             localization.addMood,
@@ -246,8 +175,6 @@ class _AddMoodScreenState extends State<AddMoodScreen> {
                   ),
                 ],
               ),
-
-              // ElvatedButton(title: "Save", onPressed: () {}),
             ],
           ),
         );

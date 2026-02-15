@@ -1,5 +1,4 @@
-import 'package:fluentui_system_icons/fluentui_system_icons.dart'
-    show FluentIcons;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,6 +8,7 @@ import 'package:moodly_j/features/moods/presentation/cubit/moods_cubti.dart';
 import 'package:moodly_j/features/moods/presentation/cubit/moods_states.dart';
 import 'package:moodly_j/features/moods/presentation/widgets/journal_item.dart';
 import 'package:moodly_j/l10n/app_localizations.dart';
+import 'package:moodly_j/features/moods/presentation/widgets/empty_journal_state.dart';
 
 class JournalistTab extends StatefulWidget {
   const JournalistTab({super.key});
@@ -89,27 +89,7 @@ class _JournalistTabState extends State<JournalistTab> {
 
                     /// لو فاضي
                     if (moods.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              color: AppTheme.blue,
-                              FluentIcons.document_one_page_24_regular,
-                              size: 40.r,
-                            ),
-                            SizedBox(height: 10.h),
-                            Text(
-                              localization.emptyJournal,
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 25.sp,
-                                color: AppTheme.deepRose,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                      return const EmptyJournalState();
                     }
 
                     /// عرض الليست

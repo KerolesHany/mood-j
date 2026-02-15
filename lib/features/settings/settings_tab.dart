@@ -1,17 +1,19 @@
-import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:moodly_j/core/service/local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:moodly_j/core/service/local_notifications.dart';
 import 'package:moodly_j/core/service_locator/get_it.dart';
-import 'package:moodly_j/core/theme/app_theme.dart';
 import 'package:moodly_j/core/ui/ui_uitils.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_cubit.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/cubit/user_states.dart';
 import 'package:moodly_j/features/on_boarding_screen/presentation/init_screen.dart';
 import 'package:moodly_j/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:moodly_j/features/settings/widgets/user_header_section.dart';
+import 'package:moodly_j/features/settings/widgets/notification_section.dart';
+import 'package:moodly_j/features/settings/widgets/language_section.dart';
+import 'package:moodly_j/features/settings/widgets/logout_section.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -21,11 +23,6 @@ class SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<SettingsTab> {
-  final themeController = ValueNotifier<bool>(true);
-  final notificationController = ValueNotifier<bool>(true);
-  final lanaugeController = ValueNotifier<bool>(true);
-  final nameController = TextEditingController();
-
   bool isNotificationEnabled = false;
   TimeOfDay notificationTime = const TimeOfDay(hour: 20, minute: 0);
   SharedPreferences? prefs;
@@ -103,7 +100,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final userCubit = BlocProvider.of<UserCubit>(context);
-    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: Padding(
         padding: EdgeInsets.all(20.r),
@@ -145,224 +142,43 @@ class _SettingsTabState extends State<SettingsTab> {
                 } else if (state is ErrorGetUserState) {
                   return Center(child: Text(localization.someThingWentWrong));
                 } else if (state is SuccessGetUserState) {
+                  // Ensure state.user is not null or handle it
+                  final user = state.user ?? userCubit.user;
+
                   return SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        //! User Image
-                        Center(
-                          child: GestureDetector(
-                            onTap: () async {
-                              final ImagePicker picker = ImagePicker();
-                              final imgUrl = await picker.pickImage(
-                                source: ImageSource.gallery,
-                              );
-                              if (imgUrl == null) return;
-                              await userCubit.changeImage(imgPath: imgUrl.path);
-                            },
-                            child: Stack(
-                              alignment: Alignment.bottomRight,
-                              children: [
-                                CircleAvatar(
-                                  radius: 70.r,
-                                  backgroundImage:
-                                      (userCubit.user?.imgPath == null ||
-                                          userCubit.user!.imgPath.isEmpty ||
-                                          userCubit.user!.imgPath ==
-                                              "assets/icons/person.png")
-                                      ? AssetImage("assets/icons/person.png")
-                                      : FileImage(File(userCubit.user!.imgPath))
-                                            as ImageProvider,
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.blue,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  padding: EdgeInsets.all(8.r),
-                                  child: const Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 12.h),
-                        //! User Name
-                        Text(
-                          state.user!.name,
-                          style: textTheme.titleMedium!.copyWith(
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.black,
-                          ),
+                        UserHeaderSection(
+                          user: user,
+                          onImagePicked: (path) async {
+                            await userCubit.changeImage(imgPath: path);
+                          },
                         ),
                         SizedBox(height: 25.h),
-
-                        //! Notification
-                        _buildCard(
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    localization.dailyReminder,
-                                    style: textTheme.titleMedium!.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18.sp,
-                                      color: AppTheme.black,
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: isNotificationEnabled,
-                                    onChanged: _toggleNotification,
-                                    activeThumbColor: AppTheme.blue,
-                                  ),
-                                ],
-                              ),
-                              if (isNotificationEnabled) ...[
-                                Divider(),
-                                InkWell(
-                                  onTap: _pickTime,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: 10.h,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          localization
-                                              .reminder, // "Reminder" or "Time"
-                                          style: textTheme.bodyMedium!.copyWith(
-                                            fontSize: 16.sp,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              notificationTime.format(context),
-                                              style: textTheme.bodyMedium!
-                                                  .copyWith(
-                                                    fontSize: 16.sp,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppTheme.blue,
-                                                  ),
-                                            ),
-                                            SizedBox(width: 5.w),
-                                            Icon(
-                                              Icons.access_time,
-                                              color: AppTheme.blue,
-                                              size: 20.sp,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                        NotificationSection(
+                          isNotificationEnabled: isNotificationEnabled,
+                          notificationTime: notificationTime,
+                          onToggle: _toggleNotification,
+                          onPickTime: _pickTime,
                         ),
-
                         SizedBox(height: 10.h),
-
-                        //! Language
-                        _buildCard(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                localization.language,
-                                style: textTheme.titleMedium!.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18.sp,
-                                  color: AppTheme.black,
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppTheme.blue),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: language,
-                                    icon: Icon(
-                                      Icons.language,
-                                      color: AppTheme.blue,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    style: TextStyle(
-                                      color: AppTheme.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    dropdownColor: Colors.white,
-                                    onChanged: (value) async {
-                                      await BlocProvider.of<UserCubit>(
-                                        context,
-                                      ).changeLanguage(language: value!);
-                                      setState(() {
-                                        language = value;
-                                      });
-                                    },
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: 'en',
-                                        child: Text(localization.english),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'ar',
-                                        child: Text(localization.arabic),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        LanguageSection(
+                          currentLanguage: language,
+                          onChanged: (value) async {
+                            if (value != null) {
+                              await userCubit.changeLanguage(language: value);
+                              setState(() {
+                                language = value;
+                              });
+                            }
+                          },
                         ),
-
-                        //! Log Out
                         SizedBox(height: 10.h),
-                        _buildCard(
-                          child: GestureDetector(
-                            onTap: () async {
-                              await BlocProvider.of<UserCubit>(
-                                context,
-                              ).logOut();
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.logout,
-                                  color: Colors.redAccent,
-                                  size: 24.sp,
-                                ),
-                                SizedBox(width: 10.w),
-                                Text(
-                                  localization.logOut,
-                                  style: TextStyle(
-                                    color: Colors.redAccent,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18.sp,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        LogoutSection(
+                          onLogout: () async {
+                            await userCubit.logOut();
+                          },
                         ),
                       ],
                     ),
@@ -374,26 +190,6 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildCard({required Widget child}) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 10.h),
-      padding: EdgeInsets.symmetric(vertical: 12.r, horizontal: 14.r),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: child,
     );
   }
 }
